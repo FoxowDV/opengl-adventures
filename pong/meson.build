@@ -5,7 +5,7 @@ project('pong', ['cpp', 'c'], default_options : ['warning_level=4', 'cpp_std=c++
 
 
 inc = include_directories('include')
-executable('game', sources: ['main.cpp', 'glad.c'],
+executable('game', sources: ['main.cpp', 'glad.c', 'shader.cpp'],
   include_directories: inc,
   dependencies: [
     dependency('glfw3'),
