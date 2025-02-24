@@ -5,7 +5,13 @@
 
 #include <iostream>
 
-//void framebuffer_size_callback(GLFWwindow *window, int width, int height);
+#include <ratio>
+#include <thread>
+#include <chrono>
+#include <vector>
+
+std::vector<float> cursor_position_callback(GLFWwindow *window, double xpos, double ypos);
+void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void processInput(GLFWwindow *window);
 
 
@@ -20,9 +26,13 @@ int main()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+	//glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+	glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
+	//glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
 
-	GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT,"OpenGL", NULL, NULL);
+	int count;
+	GLFWmonitor ** monitors = glfwGetMonitors(&count);
+	GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "OpenGL", monitors[1], NULL);
 
 
 
@@ -33,7 +43,7 @@ int main()
 	}
 
 	glfwMakeContextCurrent(window);
-//glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
 
 	// load opengl funcs ponters
@@ -42,7 +52,7 @@ int main()
 		return -1;
 	}
 
-	Shader shader1("shaders/vertexShader.glsl", "shaders/fragment.glsl");
+//	Shader shader2("shaders/vertexShader.glsl", "shaders/shadertoy.glsl");
 
 	// figure
 	GLfloat vertices[] = {
@@ -97,9 +107,27 @@ int main()
 
 
 		// Shader operations
+		//shader1.use();
+		Shader shader1("shaders/vertexShader.glsl", "shaders/fragment.glsl");
 		shader1.use();
-		//GLuint transformLoc = glGetUniformLocation(shader1.ID, "transform");
-		//glad_glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));
+
+		// passing uniforms
+		// Resolution
+		std::vector<int> res(2);
+		glfwGetWindowSize(window, &res[0], &res[1]);
+		std::vector<GLfloat> resolution(res.begin(), res.end());
+		GLuint resolutionLoc = glGetUniformLocation(shader1.ID, "u_resolution");
+		glUniform2fv(resolutionLoc, 1, &resolution[0]);
+
+		// MousePos
+		std::vector<double> mouseD(2);
+		glfwGetCursorPos(window, &mouseD[0], &mouseD[1]);
+		std::vector<GLfloat> mouse(mouseD.begin(), mouseD.end());
+		GLuint mousePos = glGetUniformLocation(shader1.ID, "u_mouse");
+		glUniform2fv(mousePos, 1, &mouse[0]);
+		
+		// Clock
+		shader1.setFloat("u_time", glfwGetTime());
 
 		// Render forms
 		glBindVertexArray(VAO);
@@ -131,4 +159,14 @@ void processInput(GLFWwindow *window)
 
 }
 
+void framebuffer_size_callback(GLFWwindow *window, int width, int height)
+{
+	glViewport(0, 0, width, height);
+}
 
+
+std::vector<float> cursor_position_callback(GLFWwindow *window, double xpos, double ypos)
+{
+	return std::vector<float> {static_cast<float>(xpos), static_cast<float>(ypos)};
+
+}
